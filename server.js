@@ -100,4 +100,11 @@ Seja direto, motivador e use emojis. Fale em português do Brasil.`
     temperature: 0.7,
   })
 
-  const plano = resposta.choices[0]
+  const plano = resposta.choices[0].message.content
+  return { plano }
+})
+
+fastify.listen({ port: process.env.PORT || 3000, host: '0.0.0.0' }, (err) => {
+  if (err) throw err
+  console.log('🚀 FitAI Backend rodando!')
+})
