@@ -5,32 +5,36 @@ require('dotenv').config()
 const fastify = Fastify({ logger: true })
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
-fastify.register(require('@fastify/cors'), { origin: true })
+fastify.register(require('@fastify/cors'), {
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS'],
+})
 
 fastify.post('/treinador', async (request, reply) => {
-  const { mensagem, dadosBalanca } = request.body
+  const { mensagem, dadosBalanca, objetivo, nivel } = request.body
 
-  console.log('Mensagem recebida:', mensagem)
+  console.log('Mensagem:', mensagem)
 
   const resposta = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages: [
       {
         role: 'system',
-        content: `Você é o Treinador Virtual do FitAI, um aplicativo brasileiro de musculação criado para ajudar pessoas que não têm acesso a um personal trainer profissional. 
-Seu objetivo é democratizar o acesso ao fitness no Brasil.
-Seja motivador, empático, direto e fale sempre em português do Brasil.
-Dê respostas práticas e personalizadas baseadas nos dados do usuário.
-Nunca substitua um médico — para questões de saúde, oriente a procurar um profissional.`
-      },
-      {
-        role: 'user',
-        content: `Meus dados corporais:
+        content: `Você é o Treinador Virtual do FitAI, um app brasileiro de musculação criado para democratizar o acesso ao fitness e ajudar pessoas que não têm condições de contratar um personal trainer.
+
+Perfil do usuário:
+- Objetivo: ${objetivo}
+- Nível: ${nivel}
 - Peso: ${dadosBalanca.peso}kg
 - Gordura corporal: ${dadosBalanca.gordura}%
 - Massa muscular: ${dadosBalanca.musculo}kg
 
-Minha pergunta: ${mensagem}`
+Seja motivador, empático e fale sempre em português do Brasil.
+Dê respostas práticas e personalizadas.`
+      },
+      {
+        role: 'user',
+        content: mensagem
       }
     ],
     max_tokens: 1024,
@@ -38,11 +42,10 @@ Minha pergunta: ${mensagem}`
   })
 
   const texto = resposta.choices[0].message.content
-  console.log('Resposta do Groq:', texto.substring(0, 80))
   return { resposta: texto }
 })
 
-fastify.listen({ port: 3000, host: '0.0.0.0' }, (err) => {
+fastify.listen({ port: process.env.PORT || 3000, host: '0.0.0.0' }, (err) => {
   if (err) throw err
-  console.log('🚀 FitAI Backend rodando na porta 3000')
+  console.log('🚀 FitAI Backend rodando!')
 })
